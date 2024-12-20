@@ -1,0 +1,44 @@
+.profile {
+  flex-grow: 1;
+  padding: 24px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  row-gap: 10px;
+}
+
+.group {
+  width: 100%;
+  background: #212123;
+  border-radius: 8px;
+  color: var(--light);
+  padding: 12px 24px;
+}
+
+.group input {
+  width: 100%;
+  padding: 12px; /* Добавить отступы внутри инпута */
+  border: 1px solid transparent; /* Начальный бордер */
+  border-radius: 4px; /* Скругление углов */
+  background: #2a2a2a; /* Цвет фона по умолчанию */
+  color: var(--light); /* Цвет текста */
+  transition: border 0.3s; /* Плавный переход для бордера */
+}
+
+ 
+
+.group input:focus {
+  border: 1px solid #4a90e2; /* Цвет бордера при фокусе */
+  outline: none; /* Убираем стандартный outline */
+}
+
+.group input.error {
+  border: 1px solid #e74c3c; /* Цвет бордера при ошибке */
+}
+
+.errorText {
+  color: #e74c3c; /* Цвет текста ошибок */
+  margin-top: 5px; /* Отступ сверху для текста ошибок */
+}
