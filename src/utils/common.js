@@ -11,3 +11,5 @@ export const buildUrl = (baseUrl, params) => {
   });
   return url.toString(); // Возвращаем строку с полным URL
 };
+
+export const sumBy = (arr) => arr.reduce((prev, cur) => prev + cur, 0);

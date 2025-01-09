@@ -14,8 +14,13 @@ export const getCategories = createAsyncThunk(
       const res = await axios(`${BASE_URL}/categories`);
       return res.data;
     } catch (error) {
-      console.log(error);
-      return thunkAPI.rejectWithValue(error);
+      const errorMessage = error.response
+        ? error.response.data
+        : "Network Error";
+      return thunkAPI.rejectWithValue({
+        status: error.response?.status,
+        message: errorMessage,
+      });
     }
   }
 );
@@ -33,8 +38,9 @@ const categoriesSlice = createSlice({
       state.list = action.payload;
       state.isLoading = false;
     });
-    builder.addCase(getCategories.rejected, (state) => {
+    builder.addCase(getCategories.rejected, (state, action) => {
       state.isLoading = false;
+      state.error = action.payload; // Сохраняем ошибку
     });
   },
 });

@@ -6,8 +6,9 @@ import styles from "../../styles/Header.module.css";
 
 import LOGO from "../../images/logo.svg";
 import AVATAR from "../../images/avatar.jpg";
-import { toggleForm } from "../../features/user/userSlice";
+import { isInitialisiatUser, toggleForm } from "../../features/user/userSlice";
 import { useGetProductsQuery } from "../../features/api/apiSlice";
+import { logOutUser } from "../../features/user/userSlice";
 
 export const Header = () => {
   const dispatch = useDispatch();
@@ -15,10 +16,10 @@ export const Header = () => {
   const [searchValue, setSearchValue] = useState("");
   const { cart, favoutrite, currentUser } = useSelector((state) => state.user);
 
+
   const [values, setValues] = useState({ name: "Guest", avatar: AVATAR });
   const { data, isloading } = useGetProductsQuery({ title: searchValue });
 
-  console.log(data);
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -26,13 +27,20 @@ export const Header = () => {
     else navigate(ROUTES.PROFILE);
   };
 
+  const logOutHandler = () => {
+    dispatch(logOutUser());
+  };
+
   const handleSearch = ({ target: { value } }) => {
     setSearchValue(value);
   };
 
   useEffect(() => {
-    if (!currentUser) return;
-    setValues(currentUser);
+    if (currentUser) {
+      setValues(currentUser);
+    } else {
+      setValues({ name: "Guest", avatar: AVATAR }); // Установите значения по умолчанию
+    }
   }, [currentUser]);
 
   return (
@@ -108,6 +116,7 @@ export const Header = () => {
             </svg>
             <span className={styles.count}>{cart.length}</span>
           </Link>
+          {currentUser && <button onClick={logOutHandler}>Exit</button>}
         </div>
       </div>
     </div>

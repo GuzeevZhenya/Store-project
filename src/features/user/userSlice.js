@@ -7,6 +7,8 @@ export const createUser = createAsyncThunk(
   async (payload, thunkAPI) => {
     try {
       const res = await axios.post(`${BASE_URL}/users`, payload);
+      const user = JSON.stringify(res.data);
+      localStorage.setItem("userKey", user);
       return res.data;
     } catch (error) {
       console.log(error);
@@ -20,11 +22,17 @@ export const loginUser = createAsyncThunk(
   async (payload, thunkAPI) => {
     try {
       const res = await axios.post(`${BASE_URL}/auth/login`, payload);
+
+      localStorage.setItem("access_token", res.data.access_token);
+      localStorage.setItem("refresh_token", res.data.refresh_token);
+
       const login = await axios.get(`${BASE_URL}/auth/profile`, {
         headers: {
           Authorization: `Bearer ${res.data.access_token}`,
         },
       });
+      // localStorage.setItem("userKey", JSON.stringify(login.data));
+
       return login.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error);
@@ -32,6 +40,40 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const isInitialisiatUser = createAsyncThunk(
+  "users/isInitialisiatUser",
+  async (_, thunkAPI) => {
+    // Предположим, что access_token сохраняется отдельно
+    const token = localStorage.getItem("access_token"); // Извлекаем токен
+
+    if (!token) return thunkAPI.rejectWithValue("No token found");
+
+    try {
+      const res = await axios.get(`${BASE_URL}/auth/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Сохраняем данные пользователя
+      // localStorage.setItem("userKey", JSON.stringify(res.data));
+      return res.data;
+    } catch (error) {
+      console.log(error);
+      return thunkAPI.rejectWithValue(error);
+    }
+  }
+);
+
+export const logOutUser = createAsyncThunk(
+  "users/logOutUser",
+  async (payload, thunkAPI) => {
+    localStorage.removeItem("userKey");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    return null;
+  }
+);
 export const updateUser = createAsyncThunk(
   "users/updateUser",
   async (payload, thunkAPI) => {
@@ -53,30 +95,35 @@ const userSlice = createSlice({
     favoutrite: [],
     formType: "signup",
     showForm: false,
+    sizes: "",
   },
   name: "user",
   reducers: {
     addItemToCart: (state, { payload }) => {
-      let newCart = [...state.cart];
-
-      // Создаем уникальный идентификатор для товара с учетом размера
       const uniqueId = `${payload.id}-${payload.selectedSize}`;
+      const existingItem = state.cart.find(
+        (item) => item.uniqueId === uniqueId
+      );
 
-      const found = state.cart.find(({ uniqueId: id }) => id === uniqueId);
-
-      if (found) {
-        // Увеличиваем количество для найденного товара
-        newCart = newCart.map((item) => {
-          return item.uniqueId === uniqueId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item;
-        });
+      if (existingItem) {
+        existingItem.quantity += 1; // Увеличиваем количество
       } else {
-        // Добавляем новый товар с количеством 1 и уникальным идентификатором
-        newCart.push({ ...payload, quantity: 1, uniqueId });
+        state.cart.push({ ...payload, quantity: 1, uniqueId });
       }
+    },
+    removeItemFromCart: (state, { payload }) => {
+      const uniqueId = `${payload.id}-${payload.selectedSize}`;
+      const existingItem = state.cart.find(
+        (item) => item.uniqueId === uniqueId
+      );
 
-      state.cart = newCart;
+      if (existingItem) {
+        if (existingItem.quantity === 1) {
+          state.cart = state.cart.filter((item) => item.uniqueId !== uniqueId); // Удаляем товар
+        } else {
+          existingItem.quantity -= 1; // Уменьшаем количество
+        }
+      }
     },
     addItemToFavourite: (state, { payload }) => {
       let newCart = [...state.favoutrite];
@@ -110,9 +157,6 @@ const userSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    //     builder.addCase(getCategories.pending, (state) => {
-    //       state.isLoading = true;
-    //     });
     builder.addCase(createUser.fulfilled, (state, action) => {
       state.currentUser = action.payload;
       state.isLoading = false;
@@ -125,10 +169,15 @@ const userSlice = createSlice({
       state.currentUser = action.payload;
       state.isLoading = false;
     });
-
-    //     builder.addCase(getCategories.rejected, (state) => {
-    //       state.isLoading = false;
-    //     });
+    builder.addCase(isInitialisiatUser.fulfilled, (state, action) => {
+      state.currentUser = action.payload;
+      state.isLoading = false;
+    });
+    builder.addCase(logOutUser.fulfilled, (state, action) => {
+      state.currentUser = null;
+      state.cart = [];
+      state.favoutrite = [];
+    });
   },
 });
 export const {
@@ -136,5 +185,6 @@ export const {
   addItemToFavourite,
   toggleForm,
   userFormChanger,
+  removeItemFromCart,
 } = userSlice.actions;
 export default userSlice.reducer;
